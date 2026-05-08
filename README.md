@@ -12,3 +12,5 @@
  2. It adds a shimmering effect above lava and other heat sources to mimic real-life shimmering over fire sources
  3. It blurs objects which are on the side of the screen, with the strength of the blur effect increasing with increasing distance of the object from the centre of the screen.
  4. It creates reflections on the surface of the water.
+ 5. It adds Auroras and Stars to the Night Sky
+ 6. It also adds sunbeams
