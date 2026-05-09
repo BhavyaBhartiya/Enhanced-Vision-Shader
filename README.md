@@ -8,7 +8,10 @@
 ![image](./attachments/Reflection.png)
 
 ## Features:
- 1. It shows outlines of mobs and walls around the centre screen, with outline brightness increasing as darkness increases.
- 2. It adds a shimmering effect above lava and other heat sources to mimic real-life shimmering over fire sources
- 3. It blurs objects which are on the side of the screen, with the strength of the blur effect increasing with increasing distance of the object from the centre of the screen.
- 4. It creates reflections on the surface of the water.
+1.It shows outlines of mobs and walls around the centre screen, with outline brightness increasing as darkness increases.
+2.It adds a shimmering effect above lava and other heat sources to mimic real-life shimmering over fire sources
+3.It blurs objects which are on the side of the screen, with the strength of the blur effect increasing with increasing distance of the object from the centre of the screen.
+4.It creates reflections on the surface of the water
+5.It adds auroras and stars to the night sky
+6.It improves the sky colour by making it brighter
+7.It adds basic foliage swaying
