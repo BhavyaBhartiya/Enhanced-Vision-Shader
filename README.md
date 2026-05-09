@@ -6,6 +6,8 @@
 ![image](./attachments/Outline.png)
 ![image](./attachments/Shimmer.png)
 ![image](./attachments/Reflection.png)
+![image](./attachments/Sky.png)
+![image](./attachments/Aurora.png)
 
 ## Features:
 1.It shows outlines of mobs and walls around the centre screen, with outline brightness increasing as darkness increases.
