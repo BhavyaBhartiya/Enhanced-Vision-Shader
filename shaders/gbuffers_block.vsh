@@ -9,11 +9,11 @@ out vec4 glcolor;
 uniform float frameTimeCounter;
 
 float foliageprofile(float blockid) {
-	if (abs(blockid - 1001.0) < 0.5) return 0.92; // Leaves
-	if (abs(blockid - 1002.0) < 0.5) return 0.82; // Grass-like
-	if (abs(blockid - 1003.0) < 0.5) return 0.62; // Crops
-	if (abs(blockid - 1004.0) < 0.5) return 0.72; // Saplings
-	if (abs(blockid - 1005.0) < 0.5) return 0.64; // Flowers
+	if (abs(blockid - 1001.0) < 0.5) return 0.92;
+	if (abs(blockid - 1002.0) < 0.5) return 0.82;
+	if (abs(blockid - 1003.0) < 0.5) return 0.62;
+	if (abs(blockid - 1004.0) < 0.5) return 0.72;
+	if (abs(blockid - 1005.0) < 0.5) return 0.64;
 	return 0.0;
 }
 
