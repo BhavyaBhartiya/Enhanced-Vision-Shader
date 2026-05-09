@@ -20,7 +20,10 @@ float fogify(float x, float w) {
 
 vec3 calcskycolor(vec3 pos) {
 	float updot = dot(pos, gbufferModelView[1].xyz);
-	return mix(skyColor, fogColor, fogify(max(updot, 0.0), 0.25));
+	float horizon = smoothstep(-0.18, 0.70, updot);
+	vec3 horizonCol = mix(fogColor, vec3(0.54, 0.69, 0.96), 0.62);
+	vec3 zenithCol = mix(skyColor, vec3(0.25, 0.39, 0.94), 0.72);
+	return mix(horizonCol, zenithCol, horizon);
 }
 
 float hash12(vec2 p) {
@@ -59,32 +62,52 @@ float starlayer(vec2 uv, float scale, float threshold, float size) {
 	return core * star * twinkle;
 }
 
-float softband(vec2 uv, float speed, float scale) {
-	float a = sin(uv.x * scale + frameTimeCounter * speed + uv.y * 6.0);
-	float b = sin(uv.x * scale * 1.62 - frameTimeCounter * speed * 1.25 - uv.y * 13.0);
-	float c = sin((uv.x * 0.6 + uv.y) * scale * 0.85 + frameTimeCounter * speed * 0.72);
-	return a * 0.36 + b * 0.24 + c * 0.16 + 0.5;
+float valuenoise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	float a = hash12(i);
+	float b = hash12(i + vec2(1.0, 0.0));
+	float c = hash12(i + vec2(0.0, 1.0));
+	float d = hash12(i + vec2(1.0, 1.0));
+	return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
-vec3 aurora(vec3 dir, vec2 uv, float night) {
-	float low = smoothstep(0.04, 0.18, dir.y);
-	float high = 1.0 - smoothstep(0.54, 0.86, dir.y);
+float fbm(vec2 p) {
+	float s = 0.0;
+	float w = 0.5;
+	for (int i = 0; i < 4; i++) {
+		s += valuenoise(p) * w;
+		p = p * 2.03 + vec2(17.1, 9.7);
+		w *= 0.5;
+	}
+	return s;
+}
+
+vec3 aurora(vec3 dir, float night) {
+	float aurora_on = night * (1.0 - rainStrength * 0.60);
+	if (aurora_on < 0.001) return vec3(0.0);
+
+	float low = smoothstep(0.03, 0.20, dir.y);
+	float high = 1.0 - smoothstep(0.42, 0.74, dir.y);
 	float height = low * high;
 
-	float curtain1 = smoothstep(0.38, 0.74, softband(uv * vec2(1.0, 1.8), 0.105, 17.0));
-	float curtain2 = smoothstep(0.46, 0.82, softband(uv.yx + vec2(0.24, 0.06), 0.145, 25.0));
-	float curtain3 = smoothstep(0.54, 0.90, softband(uv * vec2(1.6, 2.4) + vec2(0.37, 0.11), 0.075, 31.0));
-	float streaks = 0.64 + 0.36 * sin(uv.y * 145.0 + uv.x * 18.0 - frameTimeCounter * 0.78);
-	streaks *= 0.78 + 0.22 * sin(uv.y * 55.0 - frameTimeCounter * 0.37);
+	float lon = atan(dir.z, dir.x);
+	float t = frameTimeCounter * 0.01;
+	vec2 domain = vec2(lon * 2.2, dir.y * 5.4);
+	float n1 = fbm(domain + vec2(t * 0.7, -t * 0.4));
+	float n2 = fbm(domain * 1.7 + vec2(-t * 0.5, t * 0.3));
+	float curtain = smoothstep(0.50, 0.80, n1 * 0.70 + n2 * 0.30);
+	float folds = 0.80 + 0.20 * sin(dir.y * 150.0 + n2 * 10.0 - t * 7.0);
+	float veil = smoothstep(0.42, 0.86, n1) * height;
 
-	float body = height * (curtain1 * 0.55 + curtain2 * 0.32 + curtain3 * 0.22) * streaks * night;
-	float glow = height * smoothstep(0.20, 0.75, curtain1 + curtain2) * night;
+	float body = height * curtain * folds;
+	float intensity = aurora_on * (0.92 + 0.08 * sin(t * 2.4 + lon * 1.8));
 
-	vec3 col = vec3(0.04, 0.82, 0.46) * body;
-	col += vec3(0.08, 0.36, 0.95) * body * curtain2;
-	col += vec3(0.68, 0.16, 0.66) * body * curtain3;
-	col += vec3(0.05, 0.35, 0.22) * glow * 0.25;
-	return col * 0.62;
+	vec3 col = vec3(0.06, 0.74, 0.55) * body;
+	col += vec3(0.10, 0.40, 0.78) * body * smoothstep(0.58, 0.90, n2);
+	col += vec3(0.08, 0.38, 0.26) * veil * 0.18;
+	return col * intensity * 0.34;
 }
 
 vec3 nightsky(vec3 viewdir) {
@@ -94,16 +117,16 @@ vec3 nightsky(vec3 viewdir) {
 
 	vec3 base = mix(vec3(0.006, 0.011, 0.032), vec3(0.013, 0.026, 0.060), smoothstep(-0.15, 0.58, dir.y));
 	float milky = 1.0 - smoothstep(0.045, 0.21, abs(dir.x * 0.58 + dir.z * 0.80));
-	base += vec3(0.06, 0.085, 0.14) * milky * starlayer(uv + vec2(0.17, 0.0), 18.0, 0.58, 1.25) * 0.22;
+	base += vec3(0.08, 0.10, 0.16) * milky * starlayer(uv + vec2(0.17, 0.0), 18.0, 0.54, 1.30) * 0.35;
 
 	float stars = 0.0;
-	stars += starlayer(uv, 98.0, 0.948, 1.05);
-	stars += starlayer(uv + vec2(0.31, 0.17), 172.0, 0.981, 0.80) * 0.90;
-	stars += starlayer(uv + vec2(0.67, 0.42), 58.0, 0.916, 1.35) * 1.10;
+	stars += starlayer(uv, 98.0, 0.930, 1.10);
+	stars += starlayer(uv + vec2(0.31, 0.17), 172.0, 0.970, 0.90) * 1.10;
+	stars += starlayer(uv + vec2(0.67, 0.42), 58.0, 0.890, 1.45) * 1.30;
 
 	vec3 sky = base;
-	sky += vec3(0.82, 0.88, 1.00) * stars * night * 1.35;
-	sky += aurora(dir, uv, night);
+	sky += vec3(0.86, 0.92, 1.00) * stars * night * 2.45;
+	sky += aurora(dir, night);
 	return sky;
 }
 

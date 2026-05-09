@@ -9,7 +9,7 @@ out vec4 glcolor;
 uniform float frameTimeCounter;
 
 float foliageprofile(float blockid) {
-	if (abs(blockid - 1001.0) < 0.5) return 0.48;
+	if (abs(blockid - 1001.0) < 0.5) return 0.86;
 	if (abs(blockid - 1002.0) < 0.5) return 0.74;
 	if (abs(blockid - 1003.0) < 0.5) return 0.54;
 	if (abs(blockid - 1004.0) < 0.5) return 0.58;
@@ -18,7 +18,7 @@ float foliageprofile(float blockid) {
 }
 
 float bendmask(float blockid, vec2 uv) {
-	if (abs(blockid - 1001.0) < 0.5) return 0.86;
+	if (abs(blockid - 1001.0) < 0.5) return 1.0;
 	return mix(0.46, 1.0, smoothstep(0.10, 0.92, uv.y));
 }
 
@@ -28,15 +28,23 @@ vec3 foliagewave(vec3 position, float blockid, vec2 uv) {
 
 	float time = frameTimeCounter;
 	float bend = bendmask(blockid, uv) * profile;
-	float bigwind = sin(time * 0.72 + position.x * 0.24 + position.z * 0.20);
-	bigwind += 0.45 * sin(time * 1.08 + position.x * 0.43 - position.z * 0.31);
-	float smallwind = sin(time * 1.85 + uv.x * 3.8 + uv.y * 2.6 + position.z * 0.18);
-	float sidewind = cos(time * 0.64 + position.z * 0.28 + uv.x * 1.6);
+	float gust = 0.75 + 0.25 * sin(time * 0.14 + position.x * 0.05 - position.z * 0.06);
 
-	vec2 sway = vec2(bigwind * 0.042 + smallwind * 0.010, sidewind * 0.028 + smallwind * 0.006) * bend;
+	float bigwind = sin(time * 0.56 + position.x * 0.22 + position.z * 0.19);
+	bigwind += 0.40 * sin(time * 0.90 + position.x * 0.40 - position.z * 0.29);
+	float smallwind = sin(time * 1.30 + uv.x * 4.0 + uv.y * 2.8 + position.z * 0.16);
+	float sidewind = cos(time * 0.46 + position.z * 0.26 + uv.x * 1.8);
+	float micro = sin(time * 2.00 + (position.x + position.z) * 0.18 + uv.y * 6.0);
+	float viewDist = length((gl_ModelViewMatrix * vec4(position, 1.0)).xyz);
+	float distBoost = mix(1.0, 2.0, smoothstep(8.0, 56.0, viewDist));
+
+	vec2 sway = vec2(
+		(bigwind * 0.095 + smallwind * 0.030 + micro * 0.012) * gust,
+		(sidewind * 0.075 + smallwind * 0.022 + micro * 0.010) * gust
+	) * bend * distBoost;
 	position.x += sway.x;
 	position.z += sway.y;
-	position.y += (bigwind * 0.003 + smallwind * 0.002) * bend;
+	position.y += (bigwind * 0.0090 + smallwind * 0.0060) * bend * gust * distBoost;
 	return position;
 }
 
